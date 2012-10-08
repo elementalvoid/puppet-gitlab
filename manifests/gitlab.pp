@@ -29,7 +29,7 @@ class gitlab::gitlab inherits gitlab::gitolite {
       user      => $gitlab_user,
       require   => [Exec['Get gitlab'],Package['gitolite'],Package['bundler']];
     'Setup gitlab DB':
-      command     => 'bundle exec rake gitlab:app:setup RAILS_ENV=production; bundle exec rake gitlab:app:enable_automerge RAILS_ENV=production',
+      command     => 'bundle exec rake gitlab:app:setup RAILS_ENV=production; bundle exec rake gitlab:app:enable_automerge RAILS_ENV=production; bundle exec rake db:migrate RAILS_ENV=production',
       logoutput   => 'on_failure',
       cwd         => "${gitlab_home}/gitlab",
       path        => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
@@ -44,18 +44,6 @@ class gitlab::gitlab inherits gitlab::gitolite {
         Package['bundler']
         ],
       refreshonly => true;
-  }
-
-  if $ldap_enabled == true {
-    file { "${gitlab_home}/gitlab/config/initializers/omniauth.rb":
-      ensure  => file,
-      content => template('gitlab/omniauth.rb.erb'),
-      owner   => $gitlab_user,
-      group   => $gitlab_user,
-      mode    => '0640',
-      require => [Exec['Get gitlab'],File["${gitlab_home}/gitlab/config/gitlab.yml"]],
-      notify  => Service['gitlab'];
-    }
   }
 
   sshkey { 'localhost':
